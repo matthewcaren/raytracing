@@ -26,15 +26,14 @@ class Canvas {
   }
 }
 
-let canvas = new Canvas(500, 500);
+
+let canvas = new Canvas(300, 300);
 
 
 //shape functions
 function rectangle(i, j, x, y, w, h) {
-  let rect = {x: x, y: y, w: w, h: h};
-
-  if (rect.x <= i && i < rect.x + rect.w && rect.y <= j && j < rect.y + rect.h) return [255, 0, 0];
-  return [0, 0, 255];
+  if (x <= i && i < x + w && y <= j && j < y + h) return true;
+  return false;
 }
 
 function checker(i, j) {
@@ -45,8 +44,8 @@ function checker(i, j) {
 function circle(i, j, x, y, r) {
   let c2 = (-x + i - ((r-1)/2))**2 + (-y + j - ((r-1)/2))**2;
 
-  if (c2 > (r/2)**2) return [0, 0, 0];
-  return [0, 0, 255];
+  if (c2 > (r/2)**2) return false;
+  return true;
 }
 
 function randomRGB() {
@@ -56,10 +55,28 @@ function randomRGB() {
   return String([r, g, b]);
 }
 
+
+function pixel(x, y) {
+  for (let i = 0; i < shapes.length; i++) {
+    let shape = shapes[i];
+    if (shape.rect) {
+      if (rectangle(x, y, shape.x, shape.y, shape.w, shape.h)){
+        return shape.color;
+      }
+    }
+    if (shape.circle) {
+        if (circle(x, y, shape.x, shape.y, shape.r)){
+         return shape.color;
+        }
+    }
+  }
+  return [0, 0, 0];
+}
+
 //loops through all pixels
 for (let i = 0; i < canvas.h; i++) {
   for (let j = 0; j < canvas.w; j++) {
-    let [r, g, b] = circle(i, j, 40, 90, 360);
+    let [r, g, b] = pixel(i, j, 40, 90, 360);
     canvas.setPixel(j, i, r, g, b, 255);
   }
 }
