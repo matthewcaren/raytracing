@@ -1,13 +1,16 @@
+let canvasX = 300;
+let canvasY = 300
+
+let shapes = [
+    {circle: true, x: 0.25, y: 0.25, r: 0.25, color: [255, 128, 0]},  
+    {circle: true, x: 0.75, y: 0.5, r: 0.5, color: [255, 0, 0]},  
+    {circle: true, x: 0.25, y: 0.25, r: 0.6, color: [0, 128, 0]},  
+    {circle: true, x: -1, y: 0.25, r: 0.6, color: [0, 200, 0]},
+    {rect: true, x: -0.5, y: -0.75, w: 1, h: 1.5, color: [200, 100, 200]},
+];
+
+
 class Canvas {
-  // This class creates a canvas for drawing an image, one pixel at a time. Use it like this:
-  //   let canvas = new Canvas(400, 300);
-  // will create a new canvas that is 400 pixels by 300 pixels.
-  //   canvas.setPixel(x, y, r, g, b, a);
-  // sets the pixel at (x,y) to the color (r,g,b,a).
-  //   canvas.setPixels();
-  // updates the canvas to show the new pixels. You could call setPixels() after each setPixel()
-  // call, but it will be much slower than updating a bunch of pixels with multiple setPixel()
-  // calls and then calling setPixels() once.
   constructor(w, h) {
     [this.w, this.h] = [w, h];
     this.canvas = document.createElement("canvas");
@@ -26,8 +29,25 @@ class Canvas {
   }
 }
 
+let canvas = new Canvas(canvasX, canvasY);
 
-let canvas = new Canvas(300, 300);
+
+//utility functions
+function screen_to_viewport(x, y) {
+    return [x / canvasX * 2 - 1, 1 - y / canvasY * 2];
+}
+
+function screen_to_viewportX(x) {
+    return x / canvasX * 2 - 1;
+}
+
+function screen_to_viewportY(y) {
+    return 1 - y / canvasY * 2;
+}
+
+function viewport_to_screen(x, y) {
+    return [(canvasX + 1) * x / 2, -(canvasY - 1) * y / 2];
+}
 
 
 //shape functions
@@ -46,13 +66,6 @@ function circle(i, j, x, y, r) {
 
   if (c2 > (r/2)**2) return false;
   return true;
-}
-
-function randomRGB() {
-  let r = Math.floor(Math.random() * 256);
-  let g = Math.floor(Math.random() * 256);
-  let b = Math.floor(Math.random() * 256);
-  return String([r, g, b]);
 }
 
 
@@ -76,7 +89,7 @@ function pixel(x, y) {
 //loops through all pixels
 for (let i = 0; i < canvas.h; i++) {
   for (let j = 0; j < canvas.w; j++) {
-    let [r, g, b] = pixel(i, j, 40, 90, 360);
+    let [r, g, b] = pixel(screen_to_viewportX(i), screen_to_viewportX(j), 40, 90, 360);
     canvas.setPixel(j, i, r, g, b, 255);
   }
 }
