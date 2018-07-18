@@ -1,13 +1,15 @@
-let canvasX = 300;
-let canvasY = 300
+let canvasX = 400;
+let canvasY = 400;
 
-let shapes = [
+  let shapes = [
+    {sphere: true, c: [-3, 0, -3], r: 1, color: [200, 100, 100]},
+    {sphere: true, c: [-1, 0, -5], r: 2, color: [0, 0, 255]},
     {circle: true, x: 0.25, y: 0.25, r: 0.25, color: [255, 128, 0]},  
     {circle: true, x: 0.75, y: 0.5, r: 0.5, color: [255, 0, 0]},  
     {circle: true, x: 0.25, y: 0.25, r: 0.6, color: [0, 128, 0]},  
     {circle: true, x: -1, y: 0.25, r: 0.6, color: [0, 200, 0]},
     {rect: true, x: -0.5, y: -0.75, w: 1, h: 1.5, color: [200, 100, 200]},
-];
+  ];
 
 
 class Canvas {
@@ -32,25 +34,50 @@ class Canvas {
 let canvas = new Canvas(canvasX, canvasY);
 
 
-//utility functions
+//screen/viewport functions
 function screen_to_viewport(x, y) {
-    return [x / canvasX * 2 - 1, 1 - y / canvasY * 2];
+  return [x / canvasX * 2 - 1, 1 - y / canvasY * 2];
 }
 
 function screen_to_viewportX(x) {
-    return x / canvasX * 2 - 1;
+  return x / canvasX * 2 - 1;
 }
 
 function screen_to_viewportY(y) {
-    return 1 - y / canvasY * 2;
+  return 1 - y / canvasY * 2;
 }
 
 function viewport_to_screen(x, y) {
-    return [(canvasX + 1) * x / 2, -(canvasY - 1) * y / 2];
+  return [(canvasX + 1) * x / 2, -(canvasY - 1) * y / 2];
+}
+
+//vector functions
+function scale(v, s) {
+  return [s * v[0], s * v[1], s * v[2]];
+}
+
+function add(u, v) {
+  return [u[0] + v[0], u[1] + v[1], u[2] + v[2]];
+}
+
+function sub(u, v) {
+  return [u[0] - v[0], u[1] - v[1], u[2] - v[2]];
+}
+
+function len(v) {
+  return Math.sqrt(v[0]**2 + v[1]**2 + v[2]**2);
+}
+
+function norm(v) {
+  return scale(v, 1/len(v));
+}
+
+function dot(u,v) {
+  return u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
 }
 
 
-//shape functions
+//2D shape functions
 function rectangle(i, j, x, y, w, h) {
   if (x <= i && i < x + w && y <= j && j < y + h) return true;
   return false;
@@ -68,6 +95,18 @@ function circle(i, j, x, y, r) {
   return true;
 }
 
+//3D shape functions
+function ray_intersect_sphere(g, d, s, r) {
+  let x = sub(g, s);
+  let a = dot(d, d);
+  let b = 2 * dot(x, d);
+  let c = dot(x,x) - r**2;
+  let discr = b**2 - 4 * a * c;
+  if (discr < 0) return Infinity;
+  let t = (-b - Math.sqrt(discr)) / (2 * a);
+  return t;
+}
+
 
 function pixel(x, y) {
   for (let i = 0; i < shapes.length; i++) {
@@ -78,9 +117,16 @@ function pixel(x, y) {
       }
     }
     if (shape.circle) {
-        if (circle(x, y, shape.x, shape.y, shape.r)){
-         return shape.color;
-        }
+      if (circle(x, y, shape.x, shape.y, shape.r)){
+       return shape.color;
+      }
+    }
+    if (shape.sphere) {
+      let g = [0, 0, 0];
+      let d = norm([x, y, -1]);
+      if(ray_intersect_sphere(g, d, shape.c, shape.r) != Infinity) {
+        return shape.color;
+      }
     }
   }
   return [0, 0, 0];
