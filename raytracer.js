@@ -2,13 +2,8 @@ let canvasX = 400;
 let canvasY = 400;
 
   let shapes = [
-    {sphere: true, c: [-3, 0, -3], r: 1, color: [200, 100, 100]},
+    {sphere: true, c: [2, 1, -3], r: 1, color: [200, 100, 100]},
     {sphere: true, c: [-1, 0, -5], r: 2, color: [0, 0, 255]},
-    {circle: true, x: 0.25, y: 0.25, r: 0.25, color: [255, 128, 0]},  
-    {circle: true, x: 0.75, y: 0.5, r: 0.5, color: [255, 0, 0]},  
-    {circle: true, x: 0.25, y: 0.25, r: 0.6, color: [0, 128, 0]},  
-    {circle: true, x: -1, y: 0.25, r: 0.6, color: [0, 200, 0]},
-    {rect: true, x: -0.5, y: -0.75, w: 1, h: 1.5, color: [200, 100, 200]},
   ];
 
 
@@ -77,6 +72,12 @@ function dot(u,v) {
 }
 
 
+//misc functions
+function multiplyColor(color, factor) {
+  return [color[0]*factor, color[1]*factor, color[2]*factor]
+}
+
+
 //2D shape functions
 function rectangle(i, j, x, y, w, h) {
   if (x <= i && i < x + w && y <= j && j < y + h) return true;
@@ -124,8 +125,16 @@ function pixel(x, y) {
     if (shape.sphere) {
       let g = [0, 0, 0];
       let d = norm([x, y, -1]);
-      if(ray_intersect_sphere(g, d, shape.c, shape.r) != Infinity) {
-        return shape.color;
+
+      let t = ray_intersect_sphere(g, d, shape.c, shape.r)
+
+      if(t != Infinity) {
+        let poi = add(g, scale(d, t));
+        let n = norm(sub(poi, shape.c));
+        let light = [10, 10, 10];
+        let m = norm(sub(light, poi));
+        let b = dot(n, m);
+        return multiplyColor(shape.color, b);
       }
     }
   }
