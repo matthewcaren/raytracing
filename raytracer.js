@@ -149,8 +149,10 @@ function pixel(x, y) {
       let t = ray_intersect_plane(g, d, shape.n, shape.dist)
 
       if(t != Infinity) {
-      	//shading stuff
-        return shape.color;
+        let poi = scale(d,((shape.dist - dot(shape.n, g))/dot(shape.n, d)));
+        let m = norm(sub(light, poi));
+        let b = dot(shape.n, m);
+        return scale(shape.color, b);
       }
     }
   }
