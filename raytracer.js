@@ -1,10 +1,15 @@
 let canvasX = 400;
 let canvasY = 400;
 
-  let shapes = [
-    {sphere: true, c: [2, 1, -3], r: 1, color: [200, 100, 100]},
-    {sphere: true, c: [-1, 0, -5], r: 2, color: [0, 0, 255]},
-  ];
+let shapes = [
+  {sphere: true, c: [2, 1, -3], r: 1, color: [200, 100, 100]},
+  {sphere: true, c: [-1, 0, -5], r: 2, color: [0, 0, 255]},
+  {plane: true, n: [1, 0, 0], dist: 1, color: [100, 100, 2]}
+];
+
+let light = [10, 10, 10];
+
+let backgroundColor = [64, 64, 64];
 
 
 class Canvas {
@@ -72,12 +77,6 @@ function dot(u,v) {
 }
 
 
-//misc functions
-function multiplyColor(color, factor) {
-  return [color[0]*factor, color[1]*factor, color[2]*factor]
-}
-
-
 //2D shape functions
 function rectangle(i, j, x, y, w, h) {
   if (x <= i && i < x + w && y <= j && j < y + h) return true;
@@ -108,6 +107,12 @@ function ray_intersect_sphere(g, d, s, r) {
   return t;
 }
 
+function ray_intersect_plane(g, d, n, dist) {
+	let t = (dist - dot(n, g))/dot(n, d);
+	if (t < 0) return Infinity;
+	return t;
+}
+
 
 function pixel(x, y) {
   for (let i = 0; i < shapes.length; i++) {
@@ -131,14 +136,25 @@ function pixel(x, y) {
       if(t != Infinity) {
         let poi = add(g, scale(d, t));
         let n = norm(sub(poi, shape.c));
-        let light = [10, 10, 10];
+        
         let m = norm(sub(light, poi));
         let b = dot(n, m);
-        return multiplyColor(shape.color, b);
+        return scale(shape.color, b);
+      }
+    }
+    if (shape.plane) {
+      let g = [0, 0, 0];
+      let d = norm([x, y, -1]);
+
+      let t = ray_intersect_plane(g, d, shape.n, shape.dist)
+
+      if(t != Infinity) {
+      	//shading stuff
+        return shape.color;
       }
     }
   }
-  return [0, 0, 0];
+  return backgroundColor;
 }
 
 //loops through all pixels
