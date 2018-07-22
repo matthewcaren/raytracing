@@ -1,15 +1,20 @@
+let debug = false;
+
+
 let canvasX = 400;
 let canvasY = 400;
 
 let shapes = [
   {sphere: true, c: [2, 1, -3], r: 1, color: [200, 100, 100]},
   {sphere: true, c: [-1, 0, -5], r: 2, color: [0, 0, 255]},
-  {plane: true, n: [1, 0, 0], dist: 1, color: [100, 100, 2]}
+  {plane: true, n: [0, 1, 0], dist: -1, color: [100, 100, 2]}
 ];
 
-let light = [10, 10, 10];
+let lights = [
+  {pos: [10, 10, 10]}
+];
 
-let backgroundColor = [64, 64, 64];
+let camera =[0, 0, 0];
 
 
 class Canvas {
@@ -32,6 +37,18 @@ class Canvas {
 }
 
 let canvas = new Canvas(canvasX, canvasY);
+
+
+
+$('canvas').click(function (event) {
+  console.clear();
+  debug = true;
+  console.log("@ pixel (" + [event.offsetX, event.offsetY] + ")");
+  console.log("@ viewport (" + screen_to_viewport(event.offsetX, event.offsetY) + ")");
+  pixel(...screen_to_viewport(event.offsetX, event.offsetY));
+  debug = false;
+
+});
 
 
 //screen/viewport functions
@@ -96,74 +113,99 @@ function circle(i, j, x, y, r) {
 }
 
 //3D shape functions
-function ray_intersect_sphere(g, d, s, r) {
+function intersect_ray_sphere(g, d, s, r) {
   let x = sub(g, s);
   let a = dot(d, d);
   let b = 2 * dot(x, d);
   let c = dot(x,x) - r**2;
   let discr = b**2 - 4 * a * c;
-  if (discr < 0) return Infinity;
+  if (discr < 0) return {t: Infinity};
   let t = (-b - Math.sqrt(discr)) / (2 * a);
-  return t;
+  let poi = add(g, scale(d, t));
+  let n = norm(sub(poi, shape.c));
+  let intersection = {t: t, poi: poi, n: n};
+  return intersection;
 }
 
-function ray_intersect_plane(g, d, n, dist) {
+function intersect_ray_plane(g, d, n, dist) {
 	let t = (dist - dot(n, g))/dot(n, d);
-	if (t < 0) return Infinity;
-	return t;
+	if (t < 0) return {t: Infinity};
+  let poi = scale(d, t);
+  let intersection = {t: t, poi: poi, n: n};
+  return intersection;
 }
 
-
-function pixel(x, y) {
+function intersect(g, d) {
+  // The intersect(g,d) function goes through each shape in the scene and figures
+  // out which one is seen by the ray.
+  // Make sure that intersect_ray_*() return a "hit" object that contains t, poi, and n.
+  let nearest = {t: Infinity};
   for (let i = 0; i < shapes.length; i++) {
-    let shape = shapes[i];
-    if (shape.rect) {
-      if (rectangle(x, y, shape.x, shape.y, shape.w, shape.h)){
-        return shape.color;
-      }
-    }
-    if (shape.circle) {
-      if (circle(x, y, shape.x, shape.y, shape.r)){
-       return shape.color;
-      }
-    }
+    shape = shapes[i];
+    let hit;
+
     if (shape.sphere) {
-      let g = [0, 0, 0];
-      let d = norm([x, y, -1]);
-
-      let t = ray_intersect_sphere(g, d, shape.c, shape.r)
-
-      if(t != Infinity) {
-        let poi = add(g, scale(d, t));
-        let n = norm(sub(poi, shape.c));
-        
-        let m = norm(sub(light, poi));
-        let b = dot(n, m);
-        return scale(shape.color, b);
-      }
+      hit = intersect_ray_sphere(g, d, shape.c, shape.r);
     }
     if (shape.plane) {
-      let g = [0, 0, 0];
-      let d = norm([x, y, -1]);
+      hit = intersect_ray_plane(g, d, shape.n, shape.dist);
+    }
 
-      let t = ray_intersect_plane(g, d, shape.n, shape.dist)
-
-      if(t != Infinity) {
-        let poi = scale(d,((shape.dist - dot(shape.n, g))/dot(shape.n, d)));
-        let m = norm(sub(light, poi));
-        let b = dot(shape.n, m);
-        return scale(shape.color, b);
-      }
+    if (hit.t < nearest.t) {
+      nearest = hit;
+      nearest.shape = shape;
     }
   }
-  return backgroundColor;
+  if (debug) console.log(nearest);
+  return nearest;
 }
+function ray_color(g, d) {
+  // The ray_color(g,d) function figures out which object the ray g+td hits
+  // by calling intersect(g,d).
+  // It then goes through each light, computes the shading, and adds it into
+  // the accumulated ray color.
+  hit = intersect(g, d);
+
+  if(hit.t == Infinity) return [0, 0, 255];
+
+  color = [0, 0, 0];
+
+  if (hit.t < Infinity) {
+    for (let i = 0; i < lights.length; i++) {
+      let light = lights[i];
+
+      shading = shade(hit, light);
+      color = add(color, shading);
+    }
+  }
+
+  return color;
+}
+
+function shade(hit, light) {
+  let m = norm(sub(light.pos, hit.poi));
+  let b = dot(hit.n, m);
+  return scale(hit.shape.color, b);
+}
+
+function pixel(x, y) {
+  // The only thing pixel(x,y) does is convert from an x,y coordinate to a ray g+td
+  // then call ray_color. The reason for this change is that, then, we have
+  // ray_color(g,d) which can be called when we have rays that don't start at the viewer.
+  let g = camera;
+  let d = norm(sub([...screen_to_viewport(x, y), -1], g));
+
+  if (debug == true) console.log("with ray g= (" + g + "), d=(" + d + ")");
+
+  return ray_color(g, d);
+}
+
 
 //loops through all pixels
 for (let i = 0; i < canvas.h; i++) {
   for (let j = 0; j < canvas.w; j++) {
-    let [r, g, b] = pixel(screen_to_viewportX(i), screen_to_viewportX(j), 40, 90, 360);
-    canvas.setPixel(j, i, r, g, b, 255);
+    let [r, g, b] = pixel(i, j);
+    canvas.setPixel(i, j, r, g, b, 255);
   }
 }
 
