@@ -8,15 +8,14 @@ let canvasX = 400;
 let canvasY = 400;
 
 let shapes = [
-  //{sphere: true, c: [2, 1, -3], r: 1, color: [200, 100, 100]},
-  //{sphere: true, c: [-1, 0.5, -5], r: 1.5, color: [0, 0, 255]},
-  //{sphere: true, c: [-1, 0, -2], r: .5, color: [255, 255, 0]},
-  {sphere: true, c: [-1, 0, -2], r: .5, color: [255, 255, 0], image: true},
+  {sphere: true, c: [2, 1, -3], r: 1, color: [200, 100, 100]},
+  {sphere: true, c: [-1, 0.5, -5], r: 1.5, color: [0, 0, 255]},
+  {sphere: true, c: [-1, -0.1, -2], r: .5, color: [255, 255, 255], image: true},
   {plane: true, n: [0, 1, 0], dist: -1, color: [100, 100, 2]}
 ];
 
 let lights = [
-  {pos: [10, 10, 10]}
+  {pos: [10, 10, 10], s: 1}
 ];
 
 let camera = [0, 0, 0];
@@ -137,6 +136,10 @@ function dot(u,v) {
   return u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
 }
 
+function sum(u) {
+  return u[0] + u[1] + u[2];
+}
+
 
 //2D shape functions
 function rectangle(i, j, x, y, w, h) {
@@ -209,6 +212,7 @@ function intersect(g, d) {
   return nearest;
 }
 
+
 //calls intersect() to find closest POI, then iterates through each light and sums all results to the pixel color
 function ray_color(g, d) {
   hit = intersect(g, d);
@@ -226,14 +230,15 @@ function ray_color(g, d) {
       ldir = norm(sub(light.pos, poi));
       lhit = intersect(poi,ldir);
       
-      if (lhit.t == Infinity && hit.shape.image == true) {
-        shading = shade(hit, light);
+      if (lhit.t == Infinity && hit.shape.image) {
+        shading = sum(shade(hit, light))/765;
 
         var imgCtx = imgCanvas.canvas.getContext('2d');
 
         color = imgCtx.getImageData((Math.asin(hit.n[0])/Math.PI + 0.5)*imgWidth, (-Math.asin(hit.n[1])/Math.PI + 0.5)*imgHeight, 1, 1).data;
-        color = add(color, shading);
-      } else {
+        if (debug) console.log(shading);
+        color = scale(color, shading);
+      } else if (lhit.t == Infinity) {
         shading = shade(hit, light);
         color = add(color, shading);
       }
@@ -243,6 +248,7 @@ function ray_color(g, d) {
 
   return color;
 }
+
 
 function shade(hit, light) {
   let m = norm(sub(light.pos, hit.poi));
