@@ -5,10 +5,9 @@ let canvasX = 600;
 let canvasY = 600;
 
 let shapes = [
-  //{sphere: true, c: [1.5, 0.7, -2.4], r: 0.6, color: [0, 200, 200]},
-  {sphere: true, c: [0, 0.5, -2], r: 0.5, color: [0, 200, 200]},
-  //{sphere: true, c: [-1, 0.3, -5], r: 1.5, color: [0, 0, 255]},
-  //{sphere: true, c: [-.9, -0.5, -2], r: 0.5, color: [255, 255, 255], image: true},
+  {sphere: true, c: [1.1, 0.6, -2], r: 0.5, color: [0, 200, 200]},
+  {sphere: true, c: [-1, 0.3, -5], r: 1.5, color: [0, 0, 255]},
+  {sphere: true, c: [-.9, -0.5, -2], r: 0.5, color: [255, 255, 255], image: true},
   {plane: true, n: [0, 1, 0], dist: -1, color: [255, 255, 255]}
 ];
 
